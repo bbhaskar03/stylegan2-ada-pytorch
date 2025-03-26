@@ -12,7 +12,7 @@ import PIL.Image
 import json
 import torch
 import dnnlib
-import pandas as pd  # <=== Added import for reading CSV
+import pandas as pd  # <-- Added for reading the CSV
 
 try:
     import pyspng
@@ -133,7 +133,7 @@ class Dataset(torch.utils.data.Dataset):
             if raw_labels.dtype == np.int64:
                 self._label_shape = [int(np.max(raw_labels)) + 1]
             else:
-                self._label_shape = raw_labels.shape[1:] if raw_labels.ndim > 1 else [1]
+                self._label_shape = raw_labels.shape[1:]
         return list(self._label_shape)
 
     @property
@@ -220,12 +220,15 @@ class ImageFolderDataset(Dataset):
         return image
 
     def _load_raw_labels(self):
+        # Load sampling weights from CSV
         fname = 'sampling_weights.csv'
         if fname not in self._all_fnames:
             return None
         with self._open_file(fname) as f:
             df = pd.read_csv(f)
         labels_dict = dict(zip(df['image_name'], df['weight']))
+
+        # Match image names and assign weights
         labels = [labels_dict.get(os.path.basename(img_name), 1.0) for img_name in self._image_fnames]
         labels = np.array(labels, dtype=np.float32)
         return labels
